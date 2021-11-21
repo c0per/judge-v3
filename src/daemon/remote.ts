@@ -1,34 +1,33 @@
 import * as url from 'url';
-import * as util from 'util';
 import { globalConfig as Cfg } from './config';
-import msgpack = require('msgpack-lite');
 import winston = require('winston');
 import { ProgressReportData } from '../interfaces';
 import { JudgeTask } from './interfaces';
-import * as SocketIOClient from 'socket.io-client';
+import EventWebSocket from '../websocket';
+import WebSocket = require('ws');
 
-let socketIOConnection: SocketIOClient.Socket;
+let webSocketConnection: EventWebSocket;
 let cancelCurrentPull: Function;
 
 export async function connect() {
-    const socketIOUrl = url.resolve(Cfg.serverUrl, 'judge');
-    winston.verbose(`Connect to Socket.IO "${socketIOUrl}"...`);
-    socketIOConnection = SocketIOClient(socketIOUrl);
+    const webSocketUrl = url.resolve(Cfg.serverUrl, 'judge');
+    winston.verbose(`Connect to WebSocket "${webSocketUrl}"...`);
+    webSocketConnection = new EventWebSocket(new WebSocket(webSocketUrl));
 
-    socketIOConnection.on('disconnect', () => {
-        winston.verbose(`Disconnected from Socket.IO "${socketIOUrl}"...`);
+    webSocketConnection.on('disconnect', () => {
+        winston.verbose(`Disconnected from WebSocket "${webSocketUrl}"...`);
         if (cancelCurrentPull) cancelCurrentPull();
     });
 }
 
 export async function disconnect() {
-    socketIOConnection.close();
+    webSocketConnection.close();
 }
 
 export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
     while (true) {
         winston.verbose('Waiting for new task...');
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             // This should be cancelled if socket disconnects.
             let cancelled = false;
             cancelCurrentPull = () => {
@@ -37,23 +36,22 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
                 resolve();
             }
 
-            socketIOConnection.once('onTask', async (payload: Buffer, ack: Function) => {
+            webSocketConnection.once('onTask', async (payload: any) => {
                 // After cancelled, a new pull is emitted while socket's still disconnected.
                 if (cancelled) return;
 
                 try {
                     winston.verbose('onTask.');
-                    await handle(msgpack.decode(payload));
-                    ack();
+                    await handle(payload);
+                    // ack
+                    webSocketConnection.emit('ackonTask', {});
                     resolve();
                 } catch (e) {
                     reject(e);
                 }
             });
 
-            socketIOConnection.emit('waitForTask', Cfg.serverToken, () => {
-                winston.verbose('waitForTask acked.');
-            });
+            webSocketConnection.emit('waitForTask', Cfg.serverToken);
         });
     }
 }
@@ -64,12 +62,10 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
 
 export async function reportProgress(data: ProgressReportData) {
     winston.verbose('Reporting progress', data);
-    const payload = msgpack.encode(data);
-    socketIOConnection.emit('reportProgress', Cfg.serverToken, payload);
+    webSocketConnection.emit('reportProgress', {token: Cfg.serverToken, data});
 }
 
 export async function reportResult(data: ProgressReportData) {
     winston.verbose('Reporting result', data);
-    const payload = msgpack.encode(data);
-    socketIOConnection.emit('reportResult', Cfg.serverToken, payload);
+    webSocketConnection.emit('reportResult', {token: Cfg.serverToken, data});
 }
