@@ -11,6 +11,8 @@ export interface ConfigStructure {
     serverUrl: string;
     serverToken: string;
     rabbitMQ: string;
+    mongodbUrl: string;
+    mongodbName: string;
     testDataDirectory: string;
     priority: number;
     redis: string;
@@ -34,6 +36,8 @@ const configJSON = assign({}, daemonConfigExample, readJSON(options["config"]));
 export const globalConfig: ConfigStructure = {
     serverUrl: configJSON.ServerUrl,
     serverToken: configJSON.ServerToken,
+    mongodbUrl: configJSON.MongodbUrl,
+    mongodbName: configJSON.MongodbName,
     rabbitMQ: configJSON.RabbitMQUrl,
     testDataDirectory: configJSON.TestData,
     priority: configJSON.Priority,

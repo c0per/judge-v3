@@ -3,6 +3,8 @@
     "ServerToken": "",
     "RabbitMQUrl": "amqp://localhost/",
     "RedisUrl": "redis://127.0.0.1:6379",
+    "MongodbName": "zhili",
+    "MongodbUrl": "mongodb://127.0.0.1:27017",
     "TestData": "/opt/syzoj/data/testdata",
     "Priority": 1,
     "DataDisplayLimit": 100,
