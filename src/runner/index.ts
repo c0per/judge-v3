@@ -4,13 +4,17 @@ import winston = require('winston');
 import { globalConfig as Cfg } from './config';
 import util = require('util');
 import rmq = require('./rmq');
+import Mongo from '../mongo';
 import { RPCRequest, RPCTaskType } from '../interfaces';
 import { compile } from './compile';
 import { judgeStandard, judgeAnswerSubmission, judgeInteraction } from './judge';
 
+export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
+
 (async function () {
     winston.info("Runner starts.");
     await rmq.connect();
+    await mongo.connect();
     winston.info("Start consuming the queue.");
     await rmq.waitForTask(async (task) => {
         winston.debug(`Handling task ${util.inspect(task)}`);
