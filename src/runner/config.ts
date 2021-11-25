@@ -19,6 +19,8 @@ export interface SandboxConfigBase {
 
 export interface ConfigStructure {
     rabbitMQ: string;
+    mongodbUrl: string;
+    mongodbName: string;
     testDataDirectory: string;
     workingDirectory: string;
     priority: number;
@@ -56,6 +58,8 @@ const sharedConfig = assign({}, runnerSharedConfigExample, readJSON(options["sha
 
 export const globalConfig: ConfigStructure = {
     rabbitMQ: sharedConfig.RabbitMQUrl,
+    mongodbUrl: sharedConfig.MongodbUrl,
+    mongodbName: sharedConfig.MongodbName,
     testDataDirectory: sharedConfig.TestData,
     priority: sharedConfig.Priority,
     redis: sharedConfig.RedisUrl,

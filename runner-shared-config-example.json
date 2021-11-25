@@ -2,6 +2,8 @@
     "RabbitMQUrl": "amqp://localhost/",
     "TestData": "/opt/syzoj/data/testdata",
     "RedisUrl": "redis://127.0.0.1:6379",
+    "MongoUrl": "mongodb://127.0.0.1:27017",
+    "MongodbName": "zhili",
     "Priority": 1,
     "DebugMessageDisplayLimit": 5000,
     "OutputLimit": 104857600,
