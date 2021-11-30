@@ -1,3 +1,4 @@
+import winston = require('winston');
 import { encode, decode } from 'msgpack-lite';
 import WebSocket = require('ws');
 
@@ -13,21 +14,24 @@ export default class EventWebSocket {
         return this.socket.readyState === 1;
     }
 
-    constructor(socket: WebSocket) {
-        this.socket = socket;
+    constructor(socketUrl: string) {
+        this.socket = new WebSocket(socketUrl);
         this.socket.onmessage = (rawEv) => {
             console.log(rawEv.data);
-            
+
             const payload = decode(rawEv.data as any) as [string, any];
             this.dispatchEvent(payload[0], payload[1]);
         };
         this.socket.onopen = () => {
+            winston.info('websocket opened');
             this.dispatchEvent('open', undefined);
         };
         this.socket.onclose = () => {
+            winston.info('websocket closed');
             this.dispatchEvent('close', undefined);
         };
-        this.socket.onerror = () => {
+        this.socket.onerror = (e) => {
+            winston.info('websocket error ' + e.message);
             this.dispatchEvent('error', undefined);
         };
     }

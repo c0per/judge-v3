@@ -12,9 +12,9 @@ let cancelCurrentPull: Function;
 export async function connect() {
     const webSocketUrl = url.resolve(Cfg.serverUrl, 'judge');
     winston.verbose(`Connect to WebSocket "${webSocketUrl}"...`);
-    webSocketConnection = new EventWebSocket(new WebSocket(webSocketUrl));
+    webSocketConnection = new EventWebSocket(webSocketUrl);
 
-    webSocketConnection.on('disconnect', () => {
+    webSocketConnection.on('close', () => {
         winston.verbose(`Disconnected from WebSocket "${webSocketUrl}"...`);
         if (cancelCurrentPull) cancelCurrentPull();
     });
