@@ -6,12 +6,7 @@ import remote = require('./remote');
 import Mongo from '../mongo';
 import { judge } from './judge';
 import { SerializedBuffer } from '../interfaces';
-import {
-    CaseState,
-    CaseStatus,
-    JudgeStateStatus,
-    JudgeTask
-} from './interface/judgeTask';
+import { JudgeStateStatus, JudgeTask } from './interface/judgeTask';
 
 export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 
@@ -28,9 +23,8 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
             if (extraData.type === "Buffer") task.extraData = new Buffer(extraData.data);
         }*/
 
-        let result: JudgeTask;
         try {
-            result = await judge(task, async (task: JudgeTask) => {
+            await judge(task, async (task: JudgeTask) => {
                 await remote.reportProgress(task);
             });
         } catch (err) {
@@ -39,7 +33,7 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
             task.judgeState.errorMessage = `An error occurred.\n${err.toString()}`;
         }
         console.log('done judging');
-        task = postProcess(task);
+        postProcess(task);
         await remote.reportProgress(task);
         await remote.reportResult();
     });
@@ -53,52 +47,6 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
     }
 );
 
-const postProcess = (task: JudgeTask): JudgeTask => {
-    const cases = task.judgeState.subtasks.reduce(
-        (prev: CaseState[], curr) => prev.concat(curr.testcases),
-        []
-    );
-    if (cases.every((c) => c.caseStatus === CaseStatus.Accepted)) {
-        task.judgeState.status = JudgeStateStatus.Accepted;
-        return task;
-    }
-
-    for (const c of cases) {
-        switch (c.caseStatus) {
-            case CaseStatus.WrongAnswer:
-                task.judgeState.status = JudgeStateStatus.WrongAnswer;
-                break;
-            case CaseStatus.PartiallyCorrect:
-                task.judgeState.status = JudgeStateStatus.PartiallyCorrect;
-                break;
-            case CaseStatus.MemoryLimitExceeded:
-                task.judgeState.status = JudgeStateStatus.MemoryLimitExceeded;
-                break;
-            case CaseStatus.TimeLimitExceeded:
-                task.judgeState.status = JudgeStateStatus.TimeLimitExceeded;
-                break;
-            case CaseStatus.OutputLimitExceeded:
-                task.judgeState.status = JudgeStateStatus.OutputLimitExceeded;
-                break;
-            case CaseStatus.FileError:
-                task.judgeState.status = JudgeStateStatus.FileError;
-                break;
-            case CaseStatus.RuntimeError:
-                task.judgeState.status = JudgeStateStatus.RuntimeError;
-                break;
-            case CaseStatus.JudgementFailed:
-                task.judgeState.status = JudgeStateStatus.JudgementFailed;
-                break;
-            case CaseStatus.InvalidInteraction:
-                task.judgeState.status = JudgeStateStatus.InvalidInteraction;
-                break;
-            case CaseStatus.SystemError:
-                task.judgeState.status = JudgeStateStatus.SystemError;
-                break;
-        }
-    }
-
-    if (task.judgeState.status === JudgeStateStatus.Judging)
-        task.judgeState.status = JudgeStateStatus.SystemError;
-    return task;
+const postProcess = (task: JudgeTask) => {
+    task.judgeState.getStatus();
 };

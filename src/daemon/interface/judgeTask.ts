@@ -63,6 +63,58 @@ export class JudgeState {
     status: JudgeStateStatus = JudgeStateStatus.Waiting;
     errorMessage?: string;
     subtasks: SubtaskState[] = [];
+
+    setStatus(s: JudgeStateStatus) {
+        switch (s) {
+            case JudgeStateStatus.CompileError:
+            case JudgeStateStatus.NoTestdata:
+            case JudgeStateStatus.SystemError:
+            case JudgeStateStatus.Unknown:
+                this.subtasks.map((sub) =>
+                    sub.testcases.map(
+                        (c) => (c.caseStatus = CaseStatus.SystemError)
+                    )
+                );
+            // fall through
+            default:
+                this.status = s;
+        }
+    }
+
+    getStatus() {
+        const cases = this.subtasks.reduce(
+            (prev: CaseState[], curr) => prev.concat(curr.testcases),
+            []
+        );
+        if (cases.every((c) => c.caseStatus === CaseStatus.Accepted)) {
+            this.status = JudgeStateStatus.Accepted;
+            return;
+        }
+
+        for (const c of cases) {
+            switch (c.caseStatus) {
+                case CaseStatus.WrongAnswer:
+                case CaseStatus.PartiallyCorrect:
+                case CaseStatus.MemoryLimitExceeded:
+                case CaseStatus.TimeLimitExceeded:
+                case CaseStatus.OutputLimitExceeded:
+                case CaseStatus.FileError:
+                case CaseStatus.RuntimeError:
+                case CaseStatus.JudgementFailed:
+                case CaseStatus.InvalidInteraction:
+                case CaseStatus.SystemError:
+                    this.status = c.caseStatus as unknown as JudgeStateStatus;
+                    break;
+
+                case CaseStatus.Pending:
+                case CaseStatus.Judging:
+                    this.status = JudgeStateStatus.SystemError;
+            }
+        }
+
+        if (this.status === JudgeStateStatus.Judging)
+            this.status = JudgeStateStatus.SystemError;
+    }
 }
 
 export class SubtaskState {
