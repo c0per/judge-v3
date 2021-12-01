@@ -3,6 +3,11 @@ import { globalConfig as Cfg } from './config';
 import winston = require('winston');
 import { JudgeTask } from './interface/judgeTask';
 import EventWebSocket from '../websocket';
+import {
+    JudgeStateStatus,
+    CaseStatus,
+    CaseState
+} from '../daemon/interface/judgeTask';
 
 let webSocketConnection: EventWebSocket;
 let cancelCurrentPull: Function;
@@ -42,7 +47,14 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
                     winston.verbose('onTask.');
                     // ack
                     webSocketConnection.emit('ackonTask', {});
-                    await handle(payload);
+                    await handle({
+                        ...payload,
+                        judgeState: {
+                            ...payload.judgeState,
+                            setStatus,
+                            getStatus
+                        }
+                    } as JudgeTask);
                     resolve();
                 } catch (e) {
                     reject(e);
@@ -69,4 +81,58 @@ export async function reportProgress(task: JudgeTask) {
 export async function reportResult() {
     winston.verbose('Reporting result');
     webSocketConnection.emit('reportResult', Cfg.serverToken);
+}
+
+// helper functions for JudgeState
+
+function setStatus(s: JudgeStateStatus) {
+    switch (s) {
+        case JudgeStateStatus.CompileError:
+        case JudgeStateStatus.NoTestdata:
+        case JudgeStateStatus.SystemError:
+        case JudgeStateStatus.Unknown:
+            this.subtasks.map((sub) =>
+                sub.testcases.map(
+                    (c) => (c.caseStatus = CaseStatus.SystemError)
+                )
+            );
+        // fall through
+        default:
+            this.status = s;
+    }
+}
+
+function getStatus() {
+    const cases = this.subtasks.reduce(
+        (prev: CaseState[], curr) => prev.concat(curr.testcases),
+        []
+    );
+    if (cases.every((c) => c.caseStatus === CaseStatus.Accepted)) {
+        this.status = JudgeStateStatus.Accepted;
+        return;
+    }
+
+    for (const c of cases) {
+        switch (c.caseStatus) {
+            case CaseStatus.WrongAnswer:
+            case CaseStatus.PartiallyCorrect:
+            case CaseStatus.MemoryLimitExceeded:
+            case CaseStatus.TimeLimitExceeded:
+            case CaseStatus.OutputLimitExceeded:
+            case CaseStatus.FileError:
+            case CaseStatus.RuntimeError:
+            case CaseStatus.JudgementFailed:
+            case CaseStatus.InvalidInteraction:
+            case CaseStatus.SystemError:
+                this.status = c.caseStatus as unknown as JudgeStateStatus;
+                break;
+
+            case CaseStatus.Pending:
+            case CaseStatus.Judging:
+                this.status = JudgeStateStatus.SystemError;
+        }
+    }
+
+    if (this.status === JudgeStateStatus.Judging)
+        this.status = JudgeStateStatus.SystemError;
 }

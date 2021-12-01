@@ -48,7 +48,7 @@ export enum CaseStatus {
     Judging = 'Judging'
 }
 
-export class JudgeTask {
+export interface JudgeTask {
     priority: number;
     taskId: taskId;
     pid: string;
@@ -59,82 +59,28 @@ export class JudgeTask {
     judgeState: JudgeState;
 }
 
-export class JudgeState {
-    status: JudgeStateStatus = JudgeStateStatus.Waiting;
+export interface JudgeState {
+    status: JudgeStateStatus;
     errorMessage?: string;
-    subtasks: SubtaskState[] = [];
+    subtasks: SubtaskState[];
 
-    setStatus(s: JudgeStateStatus) {
-        switch (s) {
-            case JudgeStateStatus.CompileError:
-            case JudgeStateStatus.NoTestdata:
-            case JudgeStateStatus.SystemError:
-            case JudgeStateStatus.Unknown:
-                this.subtasks.map((sub) =>
-                    sub.testcases.map(
-                        (c) => (c.caseStatus = CaseStatus.SystemError)
-                    )
-                );
-            // fall through
-            default:
-                this.status = s;
-        }
-    }
-
-    getStatus() {
-        const cases = this.subtasks.reduce(
-            (prev: CaseState[], curr) => prev.concat(curr.testcases),
-            []
-        );
-        if (cases.every((c) => c.caseStatus === CaseStatus.Accepted)) {
-            this.status = JudgeStateStatus.Accepted;
-            return;
-        }
-
-        for (const c of cases) {
-            switch (c.caseStatus) {
-                case CaseStatus.WrongAnswer:
-                case CaseStatus.PartiallyCorrect:
-                case CaseStatus.MemoryLimitExceeded:
-                case CaseStatus.TimeLimitExceeded:
-                case CaseStatus.OutputLimitExceeded:
-                case CaseStatus.FileError:
-                case CaseStatus.RuntimeError:
-                case CaseStatus.JudgementFailed:
-                case CaseStatus.InvalidInteraction:
-                case CaseStatus.SystemError:
-                    this.status = c.caseStatus as unknown as JudgeStateStatus;
-                    break;
-
-                case CaseStatus.Pending:
-                case CaseStatus.Judging:
-                    this.status = JudgeStateStatus.SystemError;
-            }
-        }
-
-        if (this.status === JudgeStateStatus.Judging)
-            this.status = JudgeStateStatus.SystemError;
-    }
+    setStatus: (s: JudgeStateStatus) => void;
+    getStatus: () => void;
 }
 
-export class SubtaskState {
+export interface SubtaskState {
     score?: number;
-    testcases: CaseState[] = [];
+    testcases: CaseState[];
 }
 
-export class CaseState {
+export interface CaseState {
     prefix: string;
-    caseStatus: CaseStatus = CaseStatus.Pending;
+    caseStatus: CaseStatus;
     errorMessage?: string;
-
     detail?: CaseDetail;
-
-    constructor(prefix: string) {
-        this.prefix = prefix;
-    }
 }
 
-export class CaseDetail {
+export interface CaseDetail {
     time: number;
     memory: number;
     input?: string;
