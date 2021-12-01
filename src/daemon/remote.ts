@@ -1,4 +1,4 @@
-import * as url from 'url';
+import { URL } from 'url';
 import { globalConfig as Cfg } from './config';
 import winston = require('winston');
 import { JudgeTask } from './interface/judgeTask';
@@ -8,7 +8,7 @@ let webSocketConnection: EventWebSocket;
 let cancelCurrentPull: Function;
 
 export async function connect() {
-    const webSocketUrl = url.resolve(Cfg.serverUrl, 'judge');
+    const webSocketUrl = new URL('judge', Cfg.serverUrl).toString();
     winston.verbose(`Connect to WebSocket "${webSocketUrl}"...`);
     webSocketConnection = new EventWebSocket(webSocketUrl);
 
