@@ -6,7 +6,7 @@ import remote = require('./remote');
 import Mongo from '../mongo';
 import { judge } from './judge';
 import { SerializedBuffer } from '../interfaces';
-import { JudgeStateStatus, JudgeTask } from './interface/judgeTask';
+import { JudgeStateStatus, JudgeTask, getStatus, setStatus } from './interface/judgeTask';
 
 export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 
@@ -29,7 +29,7 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
             });
         } catch (err) {
             winston.warn(`Judge error!!! TaskId: ${task.taskId}`, err);
-            task.judgeState.setStatus(JudgeStateStatus.SystemError);
+            setStatus(task.judgeState, JudgeStateStatus.SystemError);
             task.judgeState.errorMessage = `An error occurred.\n${err.toString()}`;
         }
         console.log('done judging');
@@ -48,5 +48,5 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 );
 
 const postProcess = (task: JudgeTask) => {
-    task.judgeState.getStatus();
+    getStatus(task.judgeState);
 };

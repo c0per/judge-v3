@@ -63,9 +63,6 @@ export interface JudgeState {
     status: JudgeStateStatus;
     errorMessage?: string;
     subtasks: SubtaskState[];
-
-    setStatus: (s: JudgeStateStatus) => void;
-    getStatus: () => void;
 }
 
 export interface SubtaskState {
@@ -90,4 +87,58 @@ export interface CaseDetail {
     userError?: string;
     spjMessage?: string;
     systemMessage?: string;
+}
+
+// helper functions for JudgeState
+
+export function setStatus(j: JudgeState, s: JudgeStateStatus) {
+    switch (s) {
+        case JudgeStateStatus.CompileError:
+        case JudgeStateStatus.NoTestdata:
+        case JudgeStateStatus.SystemError:
+        case JudgeStateStatus.Unknown:
+            j.subtasks.map((sub) =>
+                sub.testcases.map(
+                    (c) => (c.caseStatus = CaseStatus.SystemError)
+                )
+            );
+        // fall through
+        default:
+            j.status = s;
+    }
+}
+
+export function getStatus(j: JudgeState) {
+    const cases = j.subtasks.reduce(
+        (prev: CaseState[], curr) => prev.concat(curr.testcases),
+        []
+    );
+    if (cases.every((c) => c.caseStatus === CaseStatus.Accepted)) {
+        j.status = JudgeStateStatus.Accepted;
+        return;
+    }
+
+    for (const c of cases) {
+        switch (c.caseStatus) {
+            case CaseStatus.WrongAnswer:
+            case CaseStatus.PartiallyCorrect:
+            case CaseStatus.MemoryLimitExceeded:
+            case CaseStatus.TimeLimitExceeded:
+            case CaseStatus.OutputLimitExceeded:
+            case CaseStatus.FileError:
+            case CaseStatus.RuntimeError:
+            case CaseStatus.JudgementFailed:
+            case CaseStatus.InvalidInteraction:
+            case CaseStatus.SystemError:
+                j.status = c.caseStatus as unknown as JudgeStateStatus;
+                break;
+
+            case CaseStatus.Pending:
+            case CaseStatus.Judging:
+                j.status = JudgeStateStatus.SystemError;
+        }
+    }
+
+    if (j.status === JudgeStateStatus.Judging)
+        j.status = JudgeStateStatus.SystemError;
 }
