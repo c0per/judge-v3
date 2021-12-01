@@ -29,7 +29,7 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
             });
         } catch (err) {
             winston.warn(`Judge error!!! TaskId: ${task.taskId}`, err);
-            task.judgeState.status = JudgeStateStatus.SystemError;
+            task.judgeState.setStatus(JudgeStateStatus.SystemError);
             task.judgeState.errorMessage = `An error occurred.\n${err.toString()}`;
         }
         console.log('done judging');

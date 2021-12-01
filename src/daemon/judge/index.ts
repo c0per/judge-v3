@@ -36,7 +36,7 @@ export async function judge(
         testData = await mongo.getTest(task.pid);
     } catch (err) {
         winston.info(`Error reading test data for ${task.taskId}`, err);
-        task.judgeState.status = JudgeStateStatus.NoTestdata;
+        task.judgeState.setStatus(JudgeStateStatus.NoTestdata);
         task.judgeState.errorMessage = err.toString();
         return task;
     }
@@ -64,7 +64,7 @@ export async function judge(
         await judger.preprocessTestData();
     } catch (err) {
         winston.verbose(`Test data ${task.taskId} err`, err);
-        task.judgeState.status = JudgeStateStatus.NoTestdata;
+        task.judgeState.setStatus(JudgeStateStatus.NoTestdata);
         task.judgeState.errorMessage = err.toString();
         return task;
     }
@@ -74,11 +74,11 @@ export async function judge(
     winston.debug(`Reporting compilation progress...`);
     if (compileResult.status !== TaskStatus.Done) {
         winston.verbose(`Compilation error: ${compileResult.message}`);
-        task.judgeState.status = JudgeStateStatus.CompileError;
+        task.judgeState.setStatus(JudgeStateStatus.CompileError);
         task.judgeState.errorMessage = compileResult.message;
         return task;
     } else {
-        task.judgeState.status = JudgeStateStatus.Judging;
+        task.judgeState.setStatus(JudgeStateStatus.Judging);
         await reportProgress(task);
     }
     winston.debug(`Judging...`);

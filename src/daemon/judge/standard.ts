@@ -102,7 +102,7 @@ export class StandardJudger extends JudgerBase {
             string,
             string,
             StandardRunResult
-        ] = (await Promise.all([
+        ] = await Promise.all([
             mongo.readFileIdByLength(curCase.input, Cfg.dataDisplayLimit),
             mongo.readFileIdByLength(curCase.output, Cfg.dataDisplayLimit),
             runTask(
@@ -110,7 +110,7 @@ export class StandardJudger extends JudgerBase {
                 this.priority,
                 started
             )
-        ])) as any;
+        ]);
 
         return {
             prefix: curCase.prefix,

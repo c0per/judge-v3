@@ -1,7 +1,6 @@
 import * as url from 'url';
 import { globalConfig as Cfg } from './config';
 import winston = require('winston');
-// import { ProgressReportData } from '../interfaces';
 import { JudgeTask } from './interface/judgeTask';
 import EventWebSocket from '../websocket';
 

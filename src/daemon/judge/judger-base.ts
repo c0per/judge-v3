@@ -51,6 +51,7 @@ export abstract class JudgerBase {
         const updateSubtaskScore = (subtaskIndex: number) => {
             const subtask = task.judgeState.subtasks[subtaskIndex];
             if (!subtask || !this.testData.subtasks[subtaskIndex]) return;
+            // TO FIX: wrong logic
             if (
                 subtask.testcases.some(
                     (c) => c.caseStatus !== CaseStatus.Accepted
