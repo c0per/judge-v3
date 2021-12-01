@@ -11,6 +11,7 @@ import {
 
 let webSocketConnection: EventWebSocket;
 let cancelCurrentPull: Function;
+let discardCurrentPull: Function;
 
 export async function connect() {
     const webSocketUrl = new URL('judge', Cfg.serverUrl).toString();
@@ -21,6 +22,11 @@ export async function connect() {
         winston.verbose(`Disconnected from WebSocket "${webSocketUrl}"...`);
         if (cancelCurrentPull) cancelCurrentPull();
     });
+
+    webSocketConnection.on('open', () => {
+        winston.verbose(`Connected from WebSocket "${webSocketUrl}"...`);
+        if (discardCurrentPull) discardCurrentPull();
+    })
 }
 
 export async function disconnect() {
@@ -38,6 +44,7 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
                 winston.verbose('Cancelled task polling since disconnected.');
                 resolve();
             };
+            discardCurrentPull = resolve;
 
             webSocketConnection.once('onTask', async (payload: any) => {
                 // After cancelled, a new pull is emitted while socket's still disconnected.
