@@ -1,6 +1,6 @@
 import * as mongodb from 'mongodb';
 import * as fs from 'fs';
-import { Test, Limit, Executable } from './daemon/interfaces';
+import { Test, Limit, Executable } from './daemon/interface/test';
 
 interface RawProblem {
     limit: Limit;

@@ -1,27 +1,24 @@
-import { TestData, SubtaskScoringType, TestcaseJudge } from '../interfaces';
+import { Test, SubtaskScoringType, TestCase, Subtask } from '../interface/test';
 import { CompilationResult, JudgeResult, TaskStatus, SubtaskResult, TestcaseDetails } from '../../interfaces';
-import { Language } from '../../languages';
-import { compile } from './compile';
 import winston = require('winston');
-import _ = require('lodash');
+import { CaseDetail, CaseState, CaseStatus, JudgeTask, SubtaskState } from '../interface/judgeTask';
 
-const globalFullScore = 100;
-function calculateSubtaskScore(scoring: SubtaskScoringType, scores: number[]): number {
-    if (scoring === SubtaskScoringType.Minimum) {
-        return _.min(scores);
-    } else if (scoring === SubtaskScoringType.Multiple) {
-        return _.reduce(scores,
-            (res, cur) => res * cur, 1);
-    } else if (scoring === SubtaskScoringType.Summation) {
-        return _.sum(scores) / scores.length;
+function calculateSubtaskScore(scoringType: 'sum' | 'mul' | 'min', scores: number[]): number {
+    switch (scoringType) {
+        case 'sum':
+            return scores.reduce((prev, curr) => prev + curr, 0) / scores.length;
+        case 'min':
+            return Math.min(...scores);
+        case 'mul':
+            return scores.reduce((prev, curr) => prev * curr, 1);
     }
 }
 
 export abstract class JudgerBase {
     priority: number;
-    testData: TestData;
+    testData: Test;
 
-    constructor(t: TestData, p: number) {
+    constructor(t: Test, p: number) {
         this.priority = p;
         this.testData = t;
     }
@@ -30,76 +27,66 @@ export abstract class JudgerBase {
 
     abstract compile(): Promise<CompilationResult>;
 
-    async judge(reportProgressResult: (p: JudgeResult) => Promise<void>): Promise<JudgeResult> {
-        const results: SubtaskResult[] = this.testData.subtasks.map(t => ({
-            cases: t.cases.map(j => ({
-                status: TaskStatus.Waiting,
-                result: { scoringRate: t.type !== SubtaskScoringType.Summation ? 1 : 0 } as any
-            })),
-            status: TaskStatus.Waiting
-        }));
-
-        const updateSubtaskScore = (currentTask, currentResult) => {
-            if (currentResult.cases.some(c => c.status === TaskStatus.Failed)) {
-                // If any testcase has failed, the score is invaild.
-                currentResult.score = NaN;
+    async judge(task: JudgeTask, reportProgress: (t: JudgeTask) => Promise<void>): Promise<JudgeTask> {
+        const updateSubtaskScore = (subtaskIndex: number) => {
+            const subtask = task.judgeState.subtasks[subtaskIndex];
+            if (!subtask || !this.testData.subtasks[subtaskIndex]) return;
+            if (subtask.testcases.some(c => c.caseStatus !== CaseStatus.Accepted)) {
+                // If any testcase has failed, the score is 0.
+                subtask.score = 0;
             } else {
-                currentResult.score = calculateSubtaskScore(currentTask.type, currentResult.cases.map(c => c.result ? c.result.scoringRate : 0)) * currentTask.score;
+                subtask.score = calculateSubtaskScore(
+                    this.testData.subtasks[subtaskIndex].type,
+                    subtask.testcases.map(
+                        c => (c.caseStatus === CaseStatus.Accepted ? 1 : 0) * this.testData.subtasks[subtaskIndex].score
+                    )
+                );
             }
         }
 
-        const testcaseDetailsCache: Map<string, TestcaseDetails> = new Map();
-        const judgeTestcaseWrapper = async (curCase: TestcaseJudge, started: () => Promise<void>): Promise<TestcaseDetails> => {
-            if (testcaseDetailsCache.has(curCase.name)) {
-                return testcaseDetailsCache.get(curCase.name);
+        const testcaseDetailsCache: Map<string, CaseState> = new Map();
+        const judgeTestcaseWrapper = async (curCase: TestCase, started: () => Promise<void>): Promise<CaseState> => {
+            if (testcaseDetailsCache.has(curCase.prefix)) {
+                return testcaseDetailsCache.get(curCase.prefix);
             }
 
-            const result: TestcaseDetails = await this.judgeTestcase(curCase, started);
-            testcaseDetailsCache.set(curCase.name, result);
-
+            const result: CaseState = await this.judgeTestcase(curCase, started);
+            testcaseDetailsCache.set(curCase.prefix, result);
             return result;
         }
 
         for (let subtaskIndex = 0; subtaskIndex < this.testData.subtasks.length; subtaskIndex++) {
-            const currentResult = results[subtaskIndex];
-            const currentTask = this.testData.subtasks[subtaskIndex];
-            updateSubtaskScore(currentTask, currentResult);
+            updateSubtaskScore(subtaskIndex);
         }
 
-        const reportProgress = function () {
-            reportProgressResult({ subtasks: results });
-        }
-        winston.debug(`Totally ${results.length} subtasks.`);
+        winston.debug(`Totally ${task.judgeState.subtasks.length} subtasks.`);
 
         const judgeTasks: Promise<void>[] = [];
         for (let subtaskIndex = 0; subtaskIndex < this.testData.subtasks.length; subtaskIndex++) {
-            const currentResult = results[subtaskIndex];
+            const currentResult = task.judgeState.subtasks[subtaskIndex];
             const currentTask = this.testData.subtasks[subtaskIndex];
-
-            const updateCurrentSubtaskScore = () => updateSubtaskScore(currentTask, currentResult);
+            const updateCurrentSubtaskScore = () => updateSubtaskScore(subtaskIndex);
 
             judgeTasks.push((async () => {
-                // Type minimum is skippable, run one by one
-                if (currentTask.type !== SubtaskScoringType.Summation) {
+                // Type minimum and multiply is skippable, run one by one
+                if (currentTask.type !== 'sum') {
                     let skipped: boolean = false;
                     for (let index = 0; index < currentTask.cases.length; index++) {
-                        const currentTaskResult = currentResult.cases[index];
+                        const currentCaseResult = currentResult.testcases[index];
                         if (skipped) {
-                            currentTaskResult.status = TaskStatus.Skipped;
+                            currentCaseResult.caseStatus = CaseStatus.Skipped;
                         } else {
                             winston.verbose(`Judging ${subtaskIndex}, case ${index}.`);
                             let score = 0;
                             try {
-                                const taskJudge = await judgeTestcaseWrapper(currentTask.cases[index], async () => {
-                                    currentTaskResult.status = TaskStatus.Running;
-                                    await reportProgress();
+                                const caseState = await judgeTestcaseWrapper(currentTask.cases[index], async () => {
+                                    currentCaseResult.caseStatus = CaseStatus.Judging;
+                                    await reportProgress(task);
                                 });
-                                currentTaskResult.status = TaskStatus.Done;
-                                currentTaskResult.result = taskJudge;
-                                score = taskJudge.scoringRate;
+                                currentResult.testcases[index] = caseState;
                             } catch (err) {
-                                currentTaskResult.status = TaskStatus.Failed;
-                                currentTaskResult.errorMessage = err.toString();
+                                currentCaseResult.caseStatus = CaseStatus.SystemError;
+                                currentCaseResult.errorMessage = err.toString();
                                 winston.warn(`Task runner error: ${err.toString()} (subtask ${subtaskIndex}, case ${index})`);
                             }
                             if (score == null || isNaN(score) || score === 0) {
@@ -107,7 +94,7 @@ export abstract class JudgerBase {
                                 skipped = true;
                             }
                             updateCurrentSubtaskScore();
-                            await reportProgress();
+                            await reportProgress(task);
                         }
                     }
                 } else {
@@ -115,21 +102,21 @@ export abstract class JudgerBase {
                     const caseTasks: Promise<void>[] = [];
                     for (let index = 0; index < currentTask.cases.length; index++) {
                         caseTasks.push((async () => {
-                            const currentTaskResult = currentResult.cases[index];
+                            const currentCaseResult = currentResult.testcases[index];
                             winston.verbose(`Judging ${subtaskIndex}, case ${index}.`);
                             try {
-                                currentTaskResult.result = await judgeTestcaseWrapper(currentTask.cases[index], async () => {
-                                    currentTaskResult.status = TaskStatus.Running;
-                                    await reportProgress();
+                                const caseState = await judgeTestcaseWrapper(currentTask.cases[index], async () => {
+                                    currentCaseResult.caseStatus = CaseStatus.Judging;
+                                    await reportProgress(task);
                                 });
-                                currentTaskResult.status = TaskStatus.Done;
+                                currentResult.testcases[index] = caseState;
                             } catch (err) {
-                                currentTaskResult.status = TaskStatus.Failed;
-                                currentTaskResult.errorMessage = err.toString();
+                                currentCaseResult.caseStatus = CaseStatus.SystemError;
+                                currentCaseResult.errorMessage = err.toString();
                                 winston.warn(`Task runner error: ${err.toString()} (subtask ${subtaskIndex}, case ${index})`);
                             }
                             updateCurrentSubtaskScore();
-                            await reportProgress();
+                            await reportProgress(task);
                         })());
                     }
                     await Promise.all(caseTasks);
@@ -139,9 +126,10 @@ export abstract class JudgerBase {
             })());
         }
         await Promise.all(judgeTasks);
-        return { subtasks: results };
+        return task;
     }
-    protected abstract judgeTestcase(curCase: TestcaseJudge, started: () => Promise<void>): Promise<TestcaseDetails>;
+
+    protected abstract judgeTestcase(curCase: TestCase, started: () => Promise<void>): Promise<CaseState>;
 
     async cleanup() { }
 }

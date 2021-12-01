@@ -1,4 +1,4 @@
-import { TestData, InteractionJudgeParameter, TestcaseJudge } from '../interfaces';
+/*import { TestData, InteractionJudgeParameter, TestcaseJudge } from '../interfaces';
 import { TaskStatus, ErrorType, TestcaseDetails, CompilationResult, JudgeResult, TestcaseResult, InteractionRunTask, StandardRunResult, RPCTaskType } from '../../interfaces';
 import { globalConfig as Cfg } from '../config';
 import { cloneObject, readFileLength } from '../../utils';
@@ -87,4 +87,4 @@ export class InteractionJudger extends JudgerBase {
             systemMessage: runResult.systemMessage
         };
     }
-}
+}*/

@@ -1,11 +1,9 @@
-require('source-map-support').install();
-
 import winston = require('winston');
 import { globalConfig as Cfg } from './config';
 import util = require('util');
 import rmq = require('./rmq');
 import Mongo from '../mongo';
-import { RPCRequest, RPCTaskType } from '../interfaces';
+import { RPCTaskType } from '../interfaces';
 import { compile } from './compile';
 import { judgeStandard, judgeAnswerSubmission, judgeInteraction } from './judge';
 

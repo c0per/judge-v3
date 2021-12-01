@@ -1,10 +1,9 @@
 import * as url from 'url';
 import { globalConfig as Cfg } from './config';
 import winston = require('winston');
-import { ProgressReportData } from '../interfaces';
-import { JudgeTask } from './interfaces';
+// import { ProgressReportData } from '../interfaces';
+import { JudgeTask } from './interface/judgeTask';
 import EventWebSocket from '../websocket';
-import WebSocket = require('ws');
 
 let webSocketConnection: EventWebSocket;
 let cancelCurrentPull: Function;
@@ -34,7 +33,7 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
                 cancelled = true;
                 winston.verbose('Cancelled task polling since disconnected.');
                 resolve();
-            }
+            };
 
             webSocketConnection.once('onTask', async (payload: any) => {
                 // After cancelled, a new pull is emitted while socket's still disconnected.
@@ -42,9 +41,9 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
 
                 try {
                     winston.verbose('onTask.');
-                    await handle(payload);
                     // ack
                     webSocketConnection.emit('ackonTask', {});
+                    await handle(payload);
                     resolve();
                 } catch (e) {
                     reject(e);
@@ -60,12 +59,15 @@ export async function waitForTask(handle: (task: JudgeTask) => Promise<void>) {
 // The `progress' is to be handled by *all* frontend proxies and pushed to all clients.
 // The `result' is to be handled only *once*, and is to be written to the database.
 
-export async function reportProgress(data: ProgressReportData) {
-    winston.verbose('Reporting progress', data);
-    webSocketConnection.emit('reportProgress', {token: Cfg.serverToken, data});
+export async function reportProgress(task: JudgeTask) {
+    winston.verbose('Reporting progress', task);
+    webSocketConnection.emit('reportProgress', {
+        token: Cfg.serverToken,
+        judgeTask: task,
+    });
 }
 
-export async function reportResult(data: ProgressReportData) {
-    winston.verbose('Reporting result', data);
-    webSocketConnection.emit('reportResult', {token: Cfg.serverToken, data});
+export async function reportResult() {
+    winston.verbose('Reporting result');
+    webSocketConnection.emit('reportResult', Cfg.serverToken);
 }

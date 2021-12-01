@@ -1,3 +1,14 @@
+export interface RPCRequest {
+    type: RPCTaskType;
+    task: any;
+}
+
+export interface RPCReply {
+    type: RPCReplyType;
+    result?: any;
+    error?: string;
+}
+
 export enum RPCTaskType {
     Compile = 1,
     RunStandard = 2,
@@ -5,9 +16,10 @@ export enum RPCTaskType {
     RunInteraction = 4
 }
 
-export interface RPCRequest {
-    type: RPCTaskType;
-    task: any;
+export enum RPCReplyType {
+    Started = 1,
+    Finished = 2,
+    Error = 3
 }
 
 export interface CompileTask {
@@ -15,6 +27,36 @@ export interface CompileTask {
     language: string;
     extraFiles: FileContent[];
     binaryName: string;
+}
+
+export interface StandardRunTask {
+    testDataName: string;
+    inputData: string;
+    answerData: string;
+    time: number;
+    memory: number;
+    fileIOInput?: string;
+    fileIOOutput?: string;
+    userExecutableName: string;
+    spjExecutableName?: string;
+}
+
+export interface InteractionRunTask {
+    testDataName: string;
+    inputData: string;
+    answerData: string;
+    time: number;
+    memory: number;
+    userExecutableName: string;
+    interactorExecutableName: string;
+}
+
+export interface AnswerSubmissionRunTask {
+    testDataName: string;
+    inputData: string;
+    answerData: string;
+    userAnswer: Buffer;
+    spjExecutableName?: string;
 }
 
 export interface TestcaseDetails {
@@ -28,7 +70,7 @@ export interface TestcaseDetails {
     userError?: string;
     spjMessage?: string;
     systemMessage?: string;
-};
+}
 
 export interface TestcaseResult {
     status: TaskStatus;
@@ -73,36 +115,6 @@ export interface StandardRunResult {
     result: TestcaseResultType;
 }
 
-export interface StandardRunTask {
-    testDataName: string;
-    inputData: string;
-    answerData: string;
-    time: number;
-    memory: number;
-    fileIOInput?: string;
-    fileIOOutput?: string;
-    userExecutableName: string;
-    spjExecutableName?: string;
-}
-
-export interface InteractionRunTask {
-    testDataName: string;
-    inputData: string;
-    answerData: string;
-    time: number;
-    memory: number;
-    userExecutableName: string;
-    interactorExecutableName: string;
-}
-
-export interface AnswerSubmissionRunTask {
-    testDataName: string;
-    inputData: string;
-    answerData: string;
-    userAnswer: Buffer;
-    spjExecutableName?: string;
-}
-
 export interface AnswerSubmissionRunResult {
     scoringRate: number;
     spjMessage: string;
@@ -131,17 +143,11 @@ export enum TestcaseResultType {
 }
 
 export interface FileContent {
-    content: string,
-    name: string
+    content: string;
+    name: string;
 }
 
-export enum RPCReplyType {
-    Started = 1,
-    Finished = 2,
-    Error = 3
-}
-
-export enum ProgressReportType {
+/*export enum ProgressReportType {
     Started = 1,
     Compiled = 2,
     Progress = 3,
@@ -153,13 +159,7 @@ export interface ProgressReportData {
     taskId: string;
     type: ProgressReportType;
     progress: OverallResult | CompilationResult;
-}
-
-export interface RPCReply {
-    type: RPCReplyType;
-    result?: any;
-    error?: string;
-}
+}*/
 
 export interface SerializedBuffer {
     type: string;

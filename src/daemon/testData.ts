@@ -1,11 +1,13 @@
-import yaml = require('js-yaml');
+/*import yaml = require('js-yaml');
 import fse = require('fs-extra');
 import pathLib = require('path');
 import { Language, languages, getLanguage } from '../languages';
 import { compareStringByNumber, tryReadFile, filterPath } from '../utils';
-import { SubtaskScoringType, SubtaskJudge, TestcaseJudge, Executable, TestData } from './interfaces';
+import { SubtaskScoringType, Executable } from './interface/test';
 import { FileContent } from '../interfaces';
 import { globalConfig as Cfg } from './config';
+import { mongo } from './index';
+import { throws } from 'assert';
 
 export interface UserSubtask {
     score: number;
@@ -39,13 +41,13 @@ function parseScoringType(typeString: string): SubtaskScoringType {
     else if (typeString === 'min')
         return SubtaskScoringType.Minimum;
     throw new Error("Subtask type must be one of the following: sum, mul, min");
-}
+}*/
 
-async function parseExecutable(src: any, dataPath: string): Promise<Executable> {
+/*async function parseExecutable(src: any, dataPath: string): Promise<Executable> {
     return { sourceCode: await fse.readFile(pathLib.join(dataPath, filterPath(src.fileName)), 'utf8'), language: getLanguage(src.language) };
-}
+}*/
 
-async function parseYamlContent(obj: UserConfigFile, dataName: string): Promise<TestData> {
+/*async function parseYamlContent(obj: UserConfigFile, dataName: string): Promise<TestData> {
     const dataPath = pathLib.join(Cfg.testDataDirectory, dataName);
     let extraFiles: { [language: string]: FileContent[] } = {};
     if (obj.extraSourceFiles) {
@@ -54,7 +56,7 @@ async function parseYamlContent(obj: UserConfigFile, dataName: string): Promise<
             for (let f of l.files) {
                 extraFiles[l.language].push({
                     name: filterPath(f.dest),
-                    content: await fse.readFile(pathLib.join(dataPath, filterPath(f.name)), 'utf8')
+                    content: ''  // TODO: await fse.readFile(pathLib.join(dataPath, filterPath(f.name)), 'utf8')
                 })
             }
         }
@@ -75,9 +77,9 @@ async function parseYamlContent(obj: UserConfigFile, dataName: string): Promise<
         interactor: obj.interactor && await parseExecutable(obj.interactor, dataPath),
         name: dataName,
     }
-}
+}*/
 
-export async function readRulesFile(dataName: string): Promise<TestData> {
+/*export async function readRulesFile(dataName: string): Promise<TestData> {
     const dataPath = pathLib.join(Cfg.testDataDirectory, dataName);
     let fileContent = await tryReadFile(pathLib.join(dataPath, 'data.yml'));
     if (fileContent != null) {
@@ -140,4 +142,4 @@ export async function readRulesFile(dataName: string): Promise<TestData> {
             extraSourceFiles: {}
         };
     }
-}
+}*/

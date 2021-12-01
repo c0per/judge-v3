@@ -1,38 +1,37 @@
 import winston = require('winston');
-import rmq = require('../rmq');
-
-import type { Test } from '../interfaces';
-import { JudgeTaskContent, JudgeTask, ProblemType } from '../interfaces';
+import { Test } from '../interface/test';
+import { ProblemType } from '../interface/test';
+import { JudgeState, JudgeStateStatus, JudgeTask } from '../interface/judgeTask';
 import { StandardJudger } from './standard';
 import { JudgerBase } from './judger-base';
-import { JudgeResult, ErrorType, OverallResult, CompilationResult, TaskStatus, ProgressReportType } from '../../interfaces';
-import { readRulesFile } from '../testData';
-import { filterPath } from '../../utils';
-import { AnswerSubmissionJudger } from './submit-answer';
-import { InteractionJudger } from './interaction';
+import { JudgeResult, ErrorType, OverallResult, CompilationResult, TaskStatus } from '../../interfaces';
+// TODO: add support for :
+// import { AnswerSubmissionJudger } from './submit-answer';
+// import { InteractionJudger } from './interaction';
+
 import { mongo } from '../index';
 
 export async function judge(
     task: JudgeTask,
     // extraData: Buffer,
-    reportProgress: (p: OverallResult) => Promise<void>,
-    reportCompileProgress: (p: CompilationResult) => Promise<void>
-): Promise<OverallResult> {
+    reportProgress: (p: JudgeTask) => Promise<void>
+): Promise<JudgeTask> {
     winston.verbose(`Judging ${task.taskId}`);
     // Parse test data
     let testData: Test = null;
     try {
-        winston.debug(`Fetching Testdata for ${task.taskId}...`);
+        winston.debug(`Fetching Testdata for ${task.taskId} for pid ${task.pid}...`);
         testData = await mongo.getTest(task.pid);
     } catch (err) {
         winston.info(`Error reading test data for ${task.taskId}`, err);
-        return { error: ErrorType.TestDataError, systemMessage: `An error occurred while parsing test data: ${err.toString()}` };
+        task.judgeState.status = JudgeStateStatus.NoTestdata;
+        task.judgeState.errorMessage = err.toString();
+        return task;
     }
 
     let judger: JudgerBase = new StandardJudger(testData, task.priority, task.lang, task.code);
     console.log("Task type: standard");
 
-    // todo: support answer submission and interaction
     /*if (task.type === ProblemType.Standard) {
         judger = new StandardJudger(testData, task.param as StandardJudgeParameter, task.priority);
     } else if (task.type === ProblemType.AnswerSubmission) {
@@ -48,22 +47,26 @@ export async function judge(
         await judger.preprocessTestData();
     } catch (err) {
         winston.verbose(`Test data ${task.taskId} err`, err);
-        return { error: ErrorType.TestDataError, systemMessage: err.toString() };
+        task.judgeState.status = JudgeStateStatus.NoTestdata;
+        task.judgeState.errorMessage = err.toString();
+        return task;
     }
 
     winston.debug(`Compiling...`);
     const compileResult = await judger.compile();
     winston.debug(`Reporting compilation progress...`);
-    await reportCompileProgress(compileResult);
     if (compileResult.status !== TaskStatus.Done) {
         winston.verbose(`Compilation error: ${compileResult.message}`);
-        return {
-            compile: compileResult
-        };
+        task.judgeState.status = JudgeStateStatus.CompileError;
+        task.judgeState.errorMessage = compileResult.message;
+        return task;
+    } else {
+        task.judgeState.status = JudgeStateStatus.Judging;
+        await reportProgress(task);
     }
     winston.debug(`Judging...`);
-    const judgeResult = await judger.judge(r => reportProgress({ compile: compileResult, judge: r }));
+    await judger.judge(task, reportProgress);
     
     await judger.cleanup();
-    return { compile: compileResult, judge: judgeResult };
+    return task;
 }

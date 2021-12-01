@@ -1,4 +1,4 @@
-import winston = require('winston');
+/*import winston = require('winston');
 import pathLib = require('path');
 import decompress = require('decompress');
 import randomstring = require('randomstring');
@@ -98,4 +98,4 @@ export class AnswerSubmissionJudger extends JudgerBase {
     async cleanup(): Promise<void> {
         await remove(this.tempDirectory);
     }
-}
+}*/
