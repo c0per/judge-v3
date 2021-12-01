@@ -2,11 +2,22 @@ import { Language } from '../../languages';
 import * as redis from '../redis';
 import * as rmq from '../rmq';
 import { codeFingerprint } from '../../utils';
-import { CompilationResult, TestcaseResult, RPCTaskType, TaskStatus, RPCRequest, CompileTask, FileContent } from '../../interfaces';
+import {
+    CompilationResult,
+    TestcaseResult,
+    RPCTaskType,
+    TaskStatus,
+    RPCRequest,
+    CompileTask,
+    FileContent
+} from '../../interfaces';
 import winston = require('winston');
 
 export async function compile(
-    code: string, language: Language, extraFiles: FileContent[] = [], priority: number
+    code: string,
+    language: Language,
+    extraFiles: FileContent[] = [],
+    priority: number
 ): Promise<[string, CompilationResult]> {
     const fingerprint = codeFingerprint(code, language.name);
     winston.debug(`Compiling code, fingerprint = ${fingerprint}`);
@@ -24,7 +35,10 @@ export async function compile(
                 extraFiles: extraFiles,
                 binaryName: fingerprint
             };
-            result = await rmq.runTask({ type: RPCTaskType.Compile, task: task }, priority);
+            result = await rmq.runTask(
+                { type: RPCTaskType.Compile, task: task },
+                priority
+            );
         }
         return [fingerprint, result];
     } finally {

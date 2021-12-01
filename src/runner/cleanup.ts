@@ -1,4 +1,4 @@
-import {disconnect as disconnectRMQ } from './rmq';
+import { disconnect as disconnectRMQ } from './rmq';
 import winston = require('winston');
 
 export function cleanUp(retCode: number) {

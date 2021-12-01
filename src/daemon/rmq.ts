@@ -28,37 +28,61 @@ async function newChannel(): Promise<amqp.Channel> {
 }
 
 // started: Callback when this task is started.
-export async function runTask(task: RPCRequest, priority: number, started?: () => void): Promise<any> {
+export async function runTask(
+    task: RPCRequest,
+    priority: number,
+    started?: () => void
+): Promise<any> {
     const correlationId = uuid();
-    winston.verbose(`Sending task ${util.inspect(task)} to run, with ID ${correlationId} and priority ${priority}`);
+    winston.verbose(
+        `Sending task ${util.inspect(
+            task
+        )} to run, with ID ${correlationId} and priority ${priority}`
+    );
     const channel = await newChannel();
-    const callbackQueue = (await channel.assertQueue('', { exclusive: true, autoDelete: true })).queue;
+    const callbackQueue = (
+        await channel.assertQueue('', { exclusive: true, autoDelete: true })
+    ).queue;
 
     let pmres, pmrej; // TODO: What the hack(f**k)? Please refine the hack.
-    const resultPromise = new Promise((res, rej) => { pmres = res; pmrej = rej; });
-    const cancel = await channel.consume(callbackQueue, (msg) => {
-        const reply = msgpack.decode(msg.content) as RPCReply;
-        winston.verbose(`Task ${correlationId} got reply: ${util.inspect(reply)}`);
+    const resultPromise = new Promise((res, rej) => {
+        pmres = res;
+        pmrej = rej;
+    });
+    const cancel = await channel.consume(
+        callbackQueue,
+        (msg) => {
+            const reply = msgpack.decode(msg.content) as RPCReply;
+            winston.verbose(
+                `Task ${correlationId} got reply: ${util.inspect(reply)}`
+            );
 
-        if (reply.type === RPCReplyType.Started) {
-            if (started) started();
-        } else {
-            channel.close().then(() => {
-                if (reply.type === RPCReplyType.Finished) {
-                    pmres(reply.result);
-                } else if (reply.type === RPCReplyType.Error) {
-                    pmrej(new Error(reply.error));
-                }
-            }, (err) => {
-                winston.error(`Failed to close RabbitMQ channel`, err);
-                pmrej(err);
-            });
-        }
-    }, { noAck: true });
+            if (reply.type === RPCReplyType.Started) {
+                if (started) started();
+            } else {
+                channel.close().then(
+                    () => {
+                        if (reply.type === RPCReplyType.Finished) {
+                            pmres(reply.result);
+                        } else if (reply.type === RPCReplyType.Error) {
+                            pmrej(new Error(reply.error));
+                        }
+                    },
+                    (err) => {
+                        winston.error(`Failed to close RabbitMQ channel`, err);
+                        pmrej(err);
+                    }
+                );
+            }
+        },
+        { noAck: true }
+    );
     winston.debug(`Task ${correlationId} callback queue subscribed.`);
 
     channel.sendToQueue(rmqCommon.taskQueueName, msgpack.encode(task), {
-        correlationId: correlationId, replyTo: callbackQueue, priority: priority
+        correlationId: correlationId,
+        replyTo: callbackQueue,
+        priority: priority
     });
     winston.debug(`Task ${correlationId} sent.`);
 

@@ -17,8 +17,13 @@ export interface Language {
 
     sourceFileName: string;
     binarySizeLimit: number;
-    compile: (sourcePath: string, outputDirectory: string, doNotUseX32Abi: boolean) => ExecParam;
-    run: (binaryDirectory: string,
+    compile: (
+        sourcePath: string,
+        outputDirectory: string,
+        doNotUseX32Abi: boolean
+    ) => ExecParam;
+    run: (
+        binaryDirectory: string,
         workingDirectory: string,
         time: number,
         memory: number,
@@ -45,7 +50,7 @@ export const languages: Language[] = [
     require('./pascal'),
     require('./python2'),
     require('./python3'),
-    require('./ruby'),
+    require('./ruby')
     // The following languages are dropped now since almost nobody uses them in LibreOJ.
     // They won't be maintained and use it at your own risk!
     /*
@@ -55,8 +60,8 @@ export const languages: Language[] = [
     require('./ocaml'),
     require('./vbnet')
     */
-].map(f => f.lang);
+].map((f) => f.lang);
 
 export function getLanguage(name: string): Language {
-    return name == null ? null : languages.find(l => l.name === name);
+    return name == null ? null : languages.find((l) => l.name === name);
 }

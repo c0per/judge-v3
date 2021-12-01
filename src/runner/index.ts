@@ -5,19 +5,23 @@ import rmq = require('./rmq');
 import Mongo from '../mongo';
 import { RPCTaskType } from '../interfaces';
 import { compile } from './compile';
-import { judgeStandard, judgeAnswerSubmission, judgeInteraction } from './judge';
+import {
+    judgeStandard,
+    judgeAnswerSubmission,
+    judgeInteraction
+} from './judge';
 
 export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 
 (async function () {
-    winston.info("Runner starts.");
+    winston.info('Runner starts.');
     await rmq.connect();
     await mongo.connect();
-    winston.info("Start consuming the queue.");
+    winston.info('Start consuming the queue.');
     await rmq.waitForTask(async (task) => {
         winston.debug(`Handling task ${util.inspect(task)}`);
         if (task.type === RPCTaskType.Compile) {
-            winston.debug("Task type is compile");
+            winston.debug('Task type is compile');
             return await compile(task.task);
         } else if (task.type === RPCTaskType.RunStandard) {
             return await judgeStandard(task.task);
@@ -26,8 +30,16 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
         } else if (task.type === RPCTaskType.RunInteraction) {
             return await judgeInteraction(task.task);
         } else {
-            winston.warn("Task type unsupported");
+            winston.warn('Task type unsupported');
             throw new Error(`Task type ${task.type} not supported!`);
         }
-	});
-})().then(() => { winston.info("Initialization logic completed."); }, (err) => { winston.error(util.inspect(err)); process.exit(1); });
+    });
+})().then(
+    () => {
+        winston.info('Initialization logic completed.');
+    },
+    (err) => {
+        winston.error(util.inspect(err));
+        process.exit(1);
+    }
+);

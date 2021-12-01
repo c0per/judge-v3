@@ -1,10 +1,20 @@
 import winston = require('winston');
 import { Test } from '../interface/test';
 import { ProblemType } from '../interface/test';
-import { JudgeState, JudgeStateStatus, JudgeTask } from '../interface/judgeTask';
+import {
+    JudgeState,
+    JudgeStateStatus,
+    JudgeTask
+} from '../interface/judgeTask';
 import { StandardJudger } from './standard';
 import { JudgerBase } from './judger-base';
-import { JudgeResult, ErrorType, OverallResult, CompilationResult, TaskStatus } from '../../interfaces';
+import {
+    JudgeResult,
+    ErrorType,
+    OverallResult,
+    CompilationResult,
+    TaskStatus
+} from '../../interfaces';
 // TODO: add support for :
 // import { AnswerSubmissionJudger } from './submit-answer';
 // import { InteractionJudger } from './interaction';
@@ -20,7 +30,9 @@ export async function judge(
     // Parse test data
     let testData: Test = null;
     try {
-        winston.debug(`Fetching Testdata for ${task.taskId} for pid ${task.pid}...`);
+        winston.debug(
+            `Fetching Testdata for ${task.taskId} for pid ${task.pid}...`
+        );
         testData = await mongo.getTest(task.pid);
     } catch (err) {
         winston.info(`Error reading test data for ${task.taskId}`, err);
@@ -29,8 +41,13 @@ export async function judge(
         return task;
     }
 
-    let judger: JudgerBase = new StandardJudger(testData, task.priority, task.lang, task.code);
-    console.log("Task type: standard");
+    let judger: JudgerBase = new StandardJudger(
+        testData,
+        task.priority,
+        task.lang,
+        task.code
+    );
+    console.log('Task type: standard');
 
     /*if (task.type === ProblemType.Standard) {
         judger = new StandardJudger(testData, task.param as StandardJudgeParameter, task.priority);
@@ -66,7 +83,7 @@ export async function judge(
     }
     winston.debug(`Judging...`);
     await judger.judge(task, reportProgress);
-    
+
     await judger.cleanup();
     return task;
 }

@@ -1,22 +1,22 @@
-export const lang =  {
-    name: "lua",
-    sourceFileName: "a.lua",
-    fileExtension: "lua",
+export const lang = {
+    name: 'lua',
+    sourceFileName: 'a.lua',
+    fileExtension: 'lua',
     binarySizeLimit: 5000 * 1024,
 
     // Note that these two paths are in the sandboxed environment.
     compile: (sourcePath, outputDirectory) => ({
         // To customize the compilation process,
-        // write a shell script or some other stuff, 
+        // write a shell script or some other stuff,
         // and put it to your sandbox.
-        executable: "/usr/bin/luac",
-        parameters: ["luac", "-o", `${outputDirectory}/a.out`, sourcePath],
+        executable: '/usr/bin/luac',
+        parameters: ['luac', '-o', `${outputDirectory}/a.out`, sourcePath],
         time: 5000,
         memory: 1024 * 1024 * 1024,
         process: 10,
         // This is just a redirection. You can simply ignore this
         // if you can specify custom location for message output
-        // in the parameter of the compiler, or have redirected the compilation 
+        // in the parameter of the compiler, or have redirected the compilation
         // message to somewhere.
         // An example will be available soon.
         stderr: `${outputDirectory}/message.txt`,
@@ -25,7 +25,8 @@ export const lang =  {
         workingDirectory: outputDirectory
     }),
 
-    run: (binaryDirectory: string,
+    run: (
+        binaryDirectory: string,
         workingDirectory: string,
         time: number,
         memory: number,
@@ -33,8 +34,8 @@ export const lang =  {
         stdoutFile = null,
         stderrFile = null
     ) => ({
-        executable: "/usr/bin/lua",
-        parameters: ["lua", `${binaryDirectory}/a.out`],
+        executable: '/usr/bin/lua',
+        parameters: ['lua', `${binaryDirectory}/a.out`],
         time: time,
         memory: memory,
         process: 1,

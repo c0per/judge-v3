@@ -5,8 +5,8 @@ import { configureWinston } from '../winston-common';
 import { assign } from 'lodash';
 import objectPath = require('object-path');
 
-const runnerInstanceConfigExample = require("../../runner-instance-config-example.json");
-const runnerSharedConfigExample = require("../../runner-shared-config-example.json");
+const runnerInstanceConfigExample = require('../../runner-instance-config-example.json');
+const runnerSharedConfigExample = require('../../runner-shared-config-example.json');
 
 export interface SandboxConfigBase {
     chroot: string;
@@ -49,12 +49,20 @@ console.log(options);
 function readJSON(path: string): any {
     if (!fs.existsSync(path)) return {};
 
-    console.log("Path: " + path);
+    console.log('Path: ' + path);
     return JSON.parse(fs.readFileSync(path, 'utf8'));
 }
 
-const instanceConfig = assign({}, runnerInstanceConfigExample, readJSON(options["instance-config"]));
-const sharedConfig = assign({}, runnerSharedConfigExample, readJSON(options["shared-config"]));
+const instanceConfig = assign(
+    {},
+    runnerInstanceConfigExample,
+    readJSON(options['instance-config'])
+);
+const sharedConfig = assign(
+    {},
+    runnerSharedConfigExample,
+    readJSON(options['shared-config'])
+);
 
 export const globalConfig: ConfigStructure = {
     rabbitMQ: sharedConfig.RabbitMQUrl,
@@ -79,8 +87,8 @@ export const globalConfig: ConfigStructure = {
         user: sharedConfig.SandboxUser,
         cgroup: instanceConfig.SandboxCgroup,
         environments: sharedConfig.SandboxEnvironments
-    },
-}
+    }
+};
 
 function parseBoolean(s: string) {
     if (s === 'true') return true;
@@ -88,14 +96,14 @@ function parseBoolean(s: string) {
     throw new Error(`Invalid boolean value: ${JSON.stringify(s)}`);
 }
 const configEnvOverrideItems = {
-    SYZOJ_JUDGE_RABBITMQ_URI: [String, "rabbitMQ"],
-    SYZOJ_JUDGE_TESTDATA_PATH: [String, "testDataDirectory"],
-    SYZOJ_JUDGE_REDIS_URI: [String, "redis"],
-    SYZOJ_JUDGE_SANDBOX_ROOTFS_PATH: [String, "sandbox.chroot"],
-    SYZOJ_JUDGE_WORKING_DIRECTORY: [String, "workingDirectory"],
-    SYZOJ_JUDGE_BINARY_DIRECTORY: [String, "binaryDirectory"],
-    SYZOJ_JUDGE_DO_NOT_USE_X32_ABI: [parseBoolean, "doNotUseX32Abi"],
-    SYZOJ_JUDGE_CGROUP: [String, "sandbox.cgroup"],
+    SYZOJ_JUDGE_RABBITMQ_URI: [String, 'rabbitMQ'],
+    SYZOJ_JUDGE_TESTDATA_PATH: [String, 'testDataDirectory'],
+    SYZOJ_JUDGE_REDIS_URI: [String, 'redis'],
+    SYZOJ_JUDGE_SANDBOX_ROOTFS_PATH: [String, 'sandbox.chroot'],
+    SYZOJ_JUDGE_WORKING_DIRECTORY: [String, 'workingDirectory'],
+    SYZOJ_JUDGE_BINARY_DIRECTORY: [String, 'binaryDirectory'],
+    SYZOJ_JUDGE_DO_NOT_USE_X32_ABI: [parseBoolean, 'doNotUseX32Abi'],
+    SYZOJ_JUDGE_CGROUP: [String, 'sandbox.cgroup']
 };
 
 for (const key in configEnvOverrideItems) {

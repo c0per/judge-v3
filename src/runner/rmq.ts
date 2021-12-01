@@ -32,39 +32,60 @@ async function newChannel(): Promise<amqp.Channel> {
 export async function waitForTask(handle: (task: RPCRequest) => Promise<any>) {
     const channel = await newChannel();
     channel.prefetch(1);
-    await channel.consume(rmqCommon.taskQueueName, async (msg: amqp.Message) => {
-        const messageId = msg.properties.messageId;
-        winston.info(`Got runner task, correlationId = ${msg.properties.correlationId}`);
-        const response = (content: RPCReply) => {
-            channel.sendToQueue(msg.properties.replyTo, msgpack.encode(content), { correlationId: msg.properties.correlationId });
-        }
-        response({ type: RPCReplyType.Started });
+    await channel.consume(
+        rmqCommon.taskQueueName,
+        async (msg: amqp.Message) => {
+            const messageId = msg.properties.messageId;
+            winston.info(
+                `Got runner task, correlationId = ${msg.properties.correlationId}`
+            );
+            const response = (content: RPCReply) => {
+                channel.sendToQueue(
+                    msg.properties.replyTo,
+                    msgpack.encode(content),
+                    { correlationId: msg.properties.correlationId }
+                );
+            };
+            response({ type: RPCReplyType.Started });
 
-        while (true) {
-            try {
-                const request = msgpack.decode(msg.content) as RPCRequest;
-                const result = await handle(request);
-                response({ type: RPCReplyType.Finished, result: result });
-                break;
-            } catch (err) {
-                let errorMessage = `Failed to run task ${msg.properties.correlationId}: ${err.toString()}, ${err.stack}`;
-                winston.warn(errorMessage);
+            while (true) {
+                try {
+                    const request = msgpack.decode(msg.content) as RPCRequest;
+                    const result = await handle(request);
+                    response({ type: RPCReplyType.Finished, result: result });
+                    break;
+                } catch (err) {
+                    let errorMessage = `Failed to run task ${
+                        msg.properties.correlationId
+                    }: ${err.toString()}, ${err.stack}`;
+                    winston.warn(errorMessage);
 
-                // Only retry on 'Error: The child process has exited unexpectedly.'
-                //            or 'Error: The child process has reported the following error: `open(std_input.c_str(), O_RDONLY)`@../native/sandbox.cc,51: No such file or directory'.
-                if (errorMessage.indexOf('Error: The child process has exited unexpectedly.') !== -1
-                 || errorMessage.indexOf('open(std_input.c_str(), O_RDONLY)') !== -1) {
-                    winston.warn('Retrying.');
-                    continue;
+                    // Only retry on 'Error: The child process has exited unexpectedly.'
+                    //            or 'Error: The child process has reported the following error: `open(std_input.c_str(), O_RDONLY)`@../native/sandbox.cc,51: No such file or directory'.
+                    if (
+                        errorMessage.indexOf(
+                            'Error: The child process has exited unexpectedly.'
+                        ) !== -1 ||
+                        errorMessage.indexOf(
+                            'open(std_input.c_str(), O_RDONLY)'
+                        ) !== -1
+                    ) {
+                        winston.warn('Retrying.');
+                        continue;
+                    }
+
+                    response({
+                        type: RPCReplyType.Error,
+                        error: err.toString()
+                    });
+                    break;
                 }
-
-                response({ type: RPCReplyType.Error, error: err.toString() });
-                break;
             }
-        }
 
-        channel.ack(msg);
-    }, {
+            channel.ack(msg);
+        },
+        {
             priority: Cfg.priority
-        });
+        }
+    );
 }

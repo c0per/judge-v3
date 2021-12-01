@@ -5,7 +5,7 @@ import { configureWinston } from '../winston-common';
 import { assign } from 'lodash';
 import objectPath = require('object-path');
 
-const daemonConfigExample = require("../../daemon-config-example.json");
+const daemonConfigExample = require('../../daemon-config-example.json');
 
 export interface ConfigStructure {
     serverUrl: string;
@@ -22,7 +22,7 @@ export interface ConfigStructure {
 
 const optionDefinitions = [
     { name: 'verbose', alias: 'v', type: Boolean },
-    { name: 'config', alias: 'c', type: String },
+    { name: 'config', alias: 'c', type: String }
 ];
 
 const options = commandLineArgs(optionDefinitions);
@@ -32,7 +32,7 @@ function readJSON(path: string): any {
     return JSON.parse(fs.readFileSync(path, 'utf8'));
 }
 
-const configJSON = assign({}, daemonConfigExample, readJSON(options["config"]));
+const configJSON = assign({}, daemonConfigExample, readJSON(options['config']));
 export const globalConfig: ConfigStructure = {
     serverUrl: configJSON.ServerUrl,
     serverToken: configJSON.ServerToken,
@@ -44,14 +44,14 @@ export const globalConfig: ConfigStructure = {
     redis: configJSON.RedisUrl,
     dataDisplayLimit: configJSON.DataDisplayLimit,
     tempDirectory: configJSON.TempDirectory
-}
+};
 
 const configEnvOverrideItems = {
-    SYZOJ_JUDGE_WEB_URL: [String, "serverUrl"],
-    SYZOJ_WEB_SECRET_JUDGE: [String, "serverToken"],
-    SYZOJ_JUDGE_RABBITMQ_URI: [String, "rabbitMQ"],
-    SYZOJ_JUDGE_TESTDATA_PATH: [String, "testDataDirectory"],
-    SYZOJ_JUDGE_REDIS_URI: [String, "redis"]
+    SYZOJ_JUDGE_WEB_URL: [String, 'serverUrl'],
+    SYZOJ_WEB_SECRET_JUDGE: [String, 'serverToken'],
+    SYZOJ_JUDGE_RABBITMQ_URI: [String, 'rabbitMQ'],
+    SYZOJ_JUDGE_TESTDATA_PATH: [String, 'testDataDirectory'],
+    SYZOJ_JUDGE_REDIS_URI: [String, 'redis']
 };
 
 for (const key in configEnvOverrideItems) {

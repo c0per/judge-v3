@@ -63,7 +63,7 @@ export async function reportProgress(task: JudgeTask) {
     winston.verbose('Reporting progress', task);
     webSocketConnection.emit('reportProgress', {
         token: Cfg.serverToken,
-        judgeTask: task,
+        judgeTask: task
     });
 }
 

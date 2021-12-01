@@ -9,7 +9,9 @@ import { redisMetadataSuffix } from '../interfaces';
 Bluebird.promisifyAll(redis.RedisClient.prototype);
 Bluebird.promisifyAll(redis.Multi.prototype);
 
-const redisClient = redis.createClient(Cfg.redis, { detect_buffers: true }) as any;
+const redisClient = redis.createClient(Cfg.redis, {
+    detect_buffers: true
+}) as any;
 // We use one client for now, cluster support to be added later.
 const redlock = new Redlock([redisClient], {
     retryCount: 50,
@@ -22,7 +24,9 @@ export async function checkBinaryExistance(name: string): Promise<Boolean> {
 }
 
 const lockTTL = 1000;
-export async function getCompileLock(name: string): Promise<() => Promise<void>> {
+export async function getCompileLock(
+    name: string
+): Promise<() => Promise<void>> {
     const lockName = `compile-${name}`;
     const lock = await redlock.lock(lockName, lockTTL);
     const token = setInterval(async () => {
@@ -31,5 +35,5 @@ export async function getCompileLock(name: string): Promise<() => Promise<void>>
     return async () => {
         clearInterval(token);
         await lock.unlock();
-    }
+    };
 }

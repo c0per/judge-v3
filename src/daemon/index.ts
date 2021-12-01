@@ -6,16 +6,21 @@ import remote = require('./remote');
 import Mongo from '../mongo';
 import { judge } from './judge';
 import { SerializedBuffer } from '../interfaces';
-import { CaseState, CaseStatus, JudgeStateStatus, JudgeTask } from './interface/judgeTask';
+import {
+    CaseState,
+    CaseStatus,
+    JudgeStateStatus,
+    JudgeTask
+} from './interface/judgeTask';
 
 export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 
 (async function () {
-    winston.info("Daemon starts.");
+    winston.info('Daemon starts.');
     await remote.connect();
     await rmq.connect();
     await mongo.connect();
-    winston.info("Start consuming the queue.");
+    winston.info('Start consuming the queue.');
     await remote.waitForTask(async (task: JudgeTask) => {
         // TODO: task.extraData
         /*if (task.extraData) {
@@ -38,12 +43,22 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
         await remote.reportProgress(task);
         await remote.reportResult();
     });
-})().then(() => { winston.info("Initialization logic completed."); }, (err) => { winston.error(util.inspect(err)); process.exit(1); });
-
+})().then(
+    () => {
+        winston.info('Initialization logic completed.');
+    },
+    (err) => {
+        winston.error(util.inspect(err));
+        process.exit(1);
+    }
+);
 
 const postProcess = (task: JudgeTask): JudgeTask => {
-    const cases = task.judgeState.subtasks.reduce((prev: CaseState[], curr) => prev.concat(curr.testcases), []);
-    if (cases.every(c => c.caseStatus === CaseStatus.Accepted)) {
+    const cases = task.judgeState.subtasks.reduce(
+        (prev: CaseState[], curr) => prev.concat(curr.testcases),
+        []
+    );
+    if (cases.every((c) => c.caseStatus === CaseStatus.Accepted)) {
         task.judgeState.status = JudgeStateStatus.Accepted;
         return task;
     }

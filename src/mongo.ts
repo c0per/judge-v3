@@ -28,7 +28,7 @@ export default class Mongo {
 
     constructor(url: string, name: string) {
         this.#client = new mongodb.MongoClient(url, {
-            useUnifiedTopology: true,
+            useUnifiedTopology: true
         });
         this.#dbName = name;
     }
@@ -44,7 +44,7 @@ export default class Mongo {
 
     async getTest(pid: string): Promise<Test> {
         const prob = await this.problem.findOne({
-            _id: new mongodb.ObjectId(pid),
+            _id: new mongodb.ObjectId(pid)
         });
         if (!prob || !prob.test)
             throw new Error('Can not find Problem TestData');
@@ -54,8 +54,8 @@ export default class Mongo {
             cases: s.cases.map((c) => ({
                 ...c,
                 input: c.input.toHexString(),
-                output: c.output.toHexString(),
-            })),
+                output: c.output.toHexString()
+            }))
         }));
 
         return { ...prob.test, limit: prob.limit };

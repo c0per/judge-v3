@@ -9,7 +9,12 @@ import { globalConfig as Cfg, globalConfig } from './config';
 import { remove, sandboxize, createOrEmptyDir, setWriteAccess } from './utils';
 import { Language, getLanguage } from '../languages';
 import { startSandbox } from 'simple-sandbox';
-import { SandboxParameter, MountInfo, SandboxStatus, SandboxResult } from 'simple-sandbox/lib/interfaces';
+import {
+    SandboxParameter,
+    MountInfo,
+    SandboxStatus,
+    SandboxResult
+} from 'simple-sandbox/lib/interfaces';
 import { getFolderSize as getSize, readFileLength } from '../utils';
 import { pushBinary } from './executable';
 
@@ -19,16 +24,25 @@ export async function compile(task: CompileTask): Promise<CompilationResult> {
     const srcDir = pathLib.join(Cfg.workingDirectory, `src`);
     const binDir = pathLib.join(Cfg.workingDirectory, `bin`);
     const tempDir = pathLib.join(Cfg.workingDirectory, 'temp');
-    await Promise.all([createOrEmptyDir(srcDir), createOrEmptyDir(binDir), createOrEmptyDir(tempDir)]);
+    await Promise.all([
+        createOrEmptyDir(srcDir),
+        createOrEmptyDir(binDir),
+        createOrEmptyDir(tempDir)
+    ]);
     await Promise.all([
         setWriteAccess(srcDir, false),
         setWriteAccess(binDir, true),
-        setWriteAccess(tempDir, true)]);
+        setWriteAccess(tempDir, true)
+    ]);
 
     const writeTasks: Promise<void>[] = [];
     if (task.extraFiles) {
         for (const f of task.extraFiles) {
-            writeTasks.push(fse.writeFile(pathLib.join(srcDir, f.name), f.content, { encoding: 'utf8' }));
+            writeTasks.push(
+                fse.writeFile(pathLib.join(srcDir, f.name), f.content, {
+                    encoding: 'utf8'
+                })
+            );
         }
     }
 
@@ -40,22 +54,28 @@ export async function compile(task: CompileTask): Promise<CompilationResult> {
     const srcDir_Sandbox = '/sandbox/1';
     const binDir_Sandbox = '/sandbox/2';
     const compileConfig = language.compile(
-        `${srcDir_Sandbox}/${language.sourceFileName}`, binDir_Sandbox, globalConfig.doNotUseX32Abi
+        `${srcDir_Sandbox}/${language.sourceFileName}`,
+        binDir_Sandbox,
+        globalConfig.doNotUseX32Abi
     );
 
-    const sandboxParam = sandboxize(compileConfig, [{
-        src: srcDir,
-        dst: srcDir_Sandbox,
-        limit: 0
-    }, {
-        src: binDir,
-        dst: binDir_Sandbox,
-        limit: -1
-    }, {
-        src: tempDir,
-        dst: '/tmp',
-        limit: -1
-    }]);
+    const sandboxParam = sandboxize(compileConfig, [
+        {
+            src: srcDir,
+            dst: srcDir_Sandbox,
+            limit: 0
+        },
+        {
+            src: binDir,
+            dst: binDir_Sandbox,
+            limit: -1
+        },
+        {
+            src: tempDir,
+            dst: '/tmp',
+            limit: -1
+        }
+    ]);
 
     try {
         const sandbox = await startSandbox(sandboxParam);
@@ -73,16 +93,30 @@ export async function compile(task: CompileTask): Promise<CompilationResult> {
                         message: `Your source code compiled to ${outputSize} bytes which is too big, too thick, too long for us..`
                     };
                 } // Else OK!
-            } else { // If compilation error
+            } else {
+                // If compilation error
                 return {
                     status: TaskStatus.Failed,
-                    message: convert.toHtml(await readFileLength(pathLib.join(binDir, compileConfig.messageFile), Cfg.compilerMessageLimit))
+                    message: convert.toHtml(
+                        await readFileLength(
+                            pathLib.join(binDir, compileConfig.messageFile),
+                            Cfg.compilerMessageLimit
+                        )
+                    )
                 };
             }
         } else {
             return {
                 status: TaskStatus.Failed,
-                message: (`A ${SandboxStatus[sandboxResult.status]} encountered while compiling your code.\n\n` + await readFileLength(binDir + '/' + compileConfig.messageFile, Cfg.compilerMessageLimit)).trim()
+                message: (
+                    `A ${
+                        SandboxStatus[sandboxResult.status]
+                    } encountered while compiling your code.\n\n` +
+                    (await readFileLength(
+                        binDir + '/' + compileConfig.messageFile,
+                        Cfg.compilerMessageLimit
+                    ))
+                ).trim()
             };
         }
 
