@@ -51,24 +51,14 @@ export abstract class JudgerBase {
         const updateSubtaskScore = (subtaskIndex: number) => {
             const subtask = task.judgeState.subtasks[subtaskIndex];
             if (!subtask || !this.testData.subtasks[subtaskIndex]) return;
-            // TO FIX: wrong logic
-            if (
-                subtask.testcases.some(
-                    (c) => c.caseStatus !== CaseStatus.Accepted
+            subtask.score = calculateSubtaskScore(
+                this.testData.subtasks[subtaskIndex].type,
+                subtask.testcases.map(
+                    (c) =>
+                        (c.caseStatus === CaseStatus.Accepted ? 1 : 0) *
+                        this.testData.subtasks[subtaskIndex].score
                 )
-            ) {
-                // If any testcase has failed, the score is 0.
-                subtask.score = 0;
-            } else {
-                subtask.score = calculateSubtaskScore(
-                    this.testData.subtasks[subtaskIndex].type,
-                    subtask.testcases.map(
-                        (c) =>
-                            (c.caseStatus === CaseStatus.Accepted ? 1 : 0) *
-                            this.testData.subtasks[subtaskIndex].score
-                    )
-                );
-            }
+            );
         };
 
         const testcaseDetailsCache: Map<string, CaseState> = new Map();
