@@ -142,3 +142,10 @@ export function getStatus(j: JudgeState) {
     if (j.status === JudgeStateStatus.Judging)
         j.status = JudgeStateStatus.SystemError;
 }
+
+export function getScore(task: JudgeTask) {
+    task.score = task.judgeState.subtasks.reduce(
+        (prev: number, curr: SubtaskState) => prev + curr.score ?? 0,
+        0
+    );
+}

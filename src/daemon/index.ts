@@ -6,7 +6,14 @@ import remote = require('./remote');
 import Mongo from '../mongo';
 import { judge } from './judge';
 import { SerializedBuffer } from '../interfaces';
-import { JudgeStateStatus, JudgeTask, getStatus, setStatus } from './interface/judgeTask';
+import {
+    JudgeStateStatus,
+    JudgeTask,
+    getStatus,
+    setStatus,
+    getScore
+} from './interface/judgeTask';
+import { getJSDocReadonlyTag } from 'typescript';
 
 export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 
@@ -49,4 +56,5 @@ export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
 
 const postProcess = (task: JudgeTask) => {
     getStatus(task.judgeState);
+    getScore(task);
 };

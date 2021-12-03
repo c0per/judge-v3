@@ -26,7 +26,7 @@ export async function connect() {
     webSocketConnection.on('open', () => {
         winston.verbose(`Connected from WebSocket "${webSocketUrl}"...`);
         if (discardCurrentPull) discardCurrentPull();
-    })
+    });
 }
 
 export async function disconnect() {
