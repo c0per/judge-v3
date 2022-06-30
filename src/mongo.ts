@@ -26,8 +26,8 @@ export default class Mongo {
     bucket: mongodb.GridFSBucket;
     problem: mongodb.Collection<RawProblem>;
 
-    constructor(url: string, name: string) {
-        this.#client = new mongodb.MongoClient(url, {
+    constructor(url: string, name: string, username: string, password: string) {
+        this.#client = new mongodb.MongoClient(`mongodb://${username}:${password}@${url}/${name}`, {
             useUnifiedTopology: true
         });
         this.#dbName = name;

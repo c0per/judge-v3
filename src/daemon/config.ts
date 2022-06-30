@@ -13,6 +13,8 @@ export interface ConfigStructure {
     rabbitMQ: string;
     mongodbUrl: string;
     mongodbName: string;
+    mongodbUsername: string;
+    mongodbPassword: string;
     testDataDirectory: string;
     priority: number;
     redis: string;
@@ -38,6 +40,8 @@ export const globalConfig: ConfigStructure = {
     serverToken: configJSON.ServerToken,
     mongodbUrl: configJSON.MongodbUrl,
     mongodbName: configJSON.MongodbName,
+    mongodbUsername: configJSON.MongodbUsername,
+    mongodbPassword: configJSON.MongodbPassword,
     rabbitMQ: configJSON.RabbitMQUrl,
     testDataDirectory: configJSON.TestData,
     priority: configJSON.Priority,

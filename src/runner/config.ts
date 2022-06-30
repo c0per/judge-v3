@@ -21,6 +21,8 @@ export interface ConfigStructure {
     rabbitMQ: string;
     mongodbUrl: string;
     mongodbName: string;
+    mongodbUsername: string;
+    mongodbPassword: string;
     testDataDirectory: string;
     workingDirectory: string;
     priority: number;
@@ -68,6 +70,8 @@ export const globalConfig: ConfigStructure = {
     rabbitMQ: sharedConfig.RabbitMQUrl,
     mongodbUrl: sharedConfig.MongodbUrl,
     mongodbName: sharedConfig.MongodbName,
+    mongodbUsername: sharedConfig.MongodbUsername,
+    mongodbPassword: sharedConfig.MongodbPassword,
     testDataDirectory: sharedConfig.TestData,
     priority: sharedConfig.Priority,
     redis: sharedConfig.RedisUrl,

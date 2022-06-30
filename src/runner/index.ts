@@ -11,7 +11,7 @@ import {
     judgeInteraction
 } from './judge';
 
-export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
+export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName, Cfg.mongodbUsername, Cfg.mongodbPassword);
 
 (async function () {
     winston.info('Runner starts.');

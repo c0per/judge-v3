@@ -15,7 +15,7 @@ import {
 } from './interface/judgeTask';
 import { getJSDocReadonlyTag } from 'typescript';
 
-export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName);
+export const mongo: Mongo = new Mongo(Cfg.mongodbUrl, Cfg.mongodbName, Cfg.mongodbUsername, Cfg.mongodbPassword);
 
 (async function () {
     winston.info('Daemon starts.');

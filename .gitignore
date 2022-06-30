@@ -1,3 +1,7 @@
+daemon-config-example.json
+runner-instance-config-example.json
+runner-shared-config-example.json
+.idea
 
 # Created by https://www.gitignore.io/api/vim,node
 
