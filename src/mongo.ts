@@ -107,9 +107,9 @@ export default class Mongo {
         const readStream = this.getFileStream(fileId);
         const writeStream = fs.createWriteStream(path);
 
-        readStream.pipe(writeStream);
         return new Promise((fullfilled) => {
-            readStream.on('close', fullfilled);
+            readStream.on('end', fullfilled);
+            readStream.pipe(writeStream);
         });
     }
 }
