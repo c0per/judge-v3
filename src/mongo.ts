@@ -90,7 +90,7 @@ export default class Mongo {
                         res(buffer.toString());
                     }
                 } else {
-                    rej(new Error('Can not read from file'));
+                    res('');
                 }
             });
         });
