@@ -1,6 +1,7 @@
 import Bluebird = require('bluebird');
 import redis = require('redis');
 import Redlock = require('redlock');
+import crypto = require('crypto');
 
 import { globalConfig as Cfg } from './config';
 import { codeFingerprint } from '../utils';
@@ -27,7 +28,7 @@ const lockTTL = 1000;
 export async function getCompileLock(
     name: string
 ): Promise<() => Promise<void>> {
-    const lockName = `compile-${name}`;
+    const lockName = `compile-${name}-${crypto.randomBytes(10).toString('hex')}`;
     const lock = await redlock.lock(lockName, lockTTL);
     const token = setInterval(async () => {
         await lock.extend(lockTTL);
